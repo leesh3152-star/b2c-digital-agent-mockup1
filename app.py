@@ -83,14 +83,14 @@ with col_chat:
 # [Right Panel] Intelligence Board (동적 렌더링)
 # =============================================================================
 with col_board:
-    st.subheader("Intelligence Board")
+    st.subheader("Simply U+ Intelligence Board")
     st.divider()
 
     # ---------------------------------------------------------
     # [Case 0] 초기 상태: S25 Campaign Dashboard (Default)
     # ---------------------------------------------------------
     if st.session_state.analysis_mode is None:
-        st.markdown("### 🚀 Campaign: Galaxy S25 사전예약 (Day 4)")
+        st.markdown("### Campaign: Galaxy S25 사전예약 (Day 4)")
         st.caption("2026.01.20 09:00 기준 실시간 현황")
         
         # 1. 핵심 캠페인 지표 (KPIs)
