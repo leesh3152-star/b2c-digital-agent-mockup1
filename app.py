@@ -308,7 +308,7 @@ if prompt := st.chat_input("질문을 입력하세요..."):
 
     # [Logic 1] 특이사항/원인 질문
     if any(word in prompt for word in ["특이", "감지", "알림", "성과", "높아", "이유", "원인"]) and not any(word in prompt for word in ["검증", "기여", "MTA", "인과"]):
-        response_text = "네, 맞습니다! **Day 4 기준 성과가 급등**했는데, 이는 Day 2부터 적용된 AI 모델 덕분으로 보입니다. \n\n정확한 **검증(Causal)**이나 **매체별 기여도(MTA)**를 확인해 보시겠습니까?"
+        response_text = "**Day 4 기준 성과가 급등**했는데, 이는 Day 2부터 적용된 AI 모델 덕분으로 보입니다. \n\n정확한 **검증(Causal)**이나 **매체별 기여도(MTA)**를 확인해 보시겠습니까?"
         next_mode = None 
 
     # [Logic 2] 인과추론 요청
