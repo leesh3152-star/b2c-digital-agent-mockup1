@@ -48,7 +48,7 @@ st.markdown("""
         color: #424242;
     }
     
-    /* 3. 질문 가이드 박스 (복구됨!) */
+    /* 3. 질문 가이드 박스 */
     .question-box {
         background-color: #f1f3f4;
         border: 1px solid #dadce0;
@@ -128,7 +128,7 @@ if "processing_text" not in st.session_state:
 # -----------------------------------------------------------------------------
 # 3. 레이아웃
 # -----------------------------------------------------------------------------
-col_chat, col_board = st.columns([4, 6], gap="large") # 채팅창 비율을 조금 늘림 (4:6)
+col_chat, col_board = st.columns([4, 6], gap="large")
 
 # =============================================================================
 # [Left Panel] Chat
@@ -144,7 +144,7 @@ with col_chat:
     # 채팅 기록 표시
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
-            st.markdown(msg["content"]) # markdown으로 렌더링해야 스타일 적용됨
+            st.markdown(msg["content"])
 
     # (MTA 모드일 때만) 예산 시뮬레이터
     if st.session_state.analysis_mode == 'mta' and not st.session_state.is_processing:
@@ -184,11 +184,10 @@ with col_board:
             progress_bar = st.progress(0)
             status_text = st.empty()
             
-            # 10초 로딩 연출 (100% / 100 steps * 0.1s = 10s)
-            # 지루하지 않게 멘트 변경
+            # 10초 로딩 연출
             steps = 100
             for i in range(steps + 1):
-                time.sleep(0.1) # 0.1초 * 100 = 10초
+                time.sleep(0.1) 
                 progress_bar.progress(i)
                 
                 if i < 30:
@@ -235,7 +234,7 @@ with col_board:
 
             st.success("📢 **AI 알림:** 'Day 2'부터 예약자가 목표치를 크게 상회하고 있습니다. (+35% Jump)")
             
-            # 질문 가이드 박스 (복구됨!)
+            # 질문 가이드 박스
             st.markdown("#### 👇 무엇을 분석해 드릴까요?")
             c1, c2 = st.columns(2)
             with c1:
@@ -260,4 +259,84 @@ with col_board:
             <div class="metric-card">
                 <h4>📄 숨겨진 효자 채널 발견!</h4>
                 <p>인스타/카카오톡의 <b>'어시스트(인지 기여)'</b> 비중이 70%입니다.<br>
-                Last Click 기준으로는 보이지 않던 성과입니다.</p
+                Last Click 기준으로는 보이지 않던 성과입니다.</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            fig = go.Figure()
+            fig.add_trace(go.Bar(name='Last Click', x=['Google', 'Insta', 'Kakao'], y=[90, 5, 5], marker_color='#b0c4de'))
+            fig.add_trace(go.Bar(name='MTA Model', x=['Google', 'Insta', 'Kakao'], y=[30, 40, 30], marker_color=['#4285F4', '#E1306C', '#FEE500']))
+            fig.update_layout(title="기여도 모델 비교", barmode='group', height=400)
+            st.plotly_chart(fig, use_container_width=True)
+
+            if st.button("🔙 메인 대시보드로 돌아가기"):
+                st.session_state.analysis_mode = None
+                st.rerun()
+
+        # [Case 2] Causal Analysis (성과 검증)
+        elif st.session_state.analysis_mode == 'causal':
+            st.markdown("### 📈 Causal Analysis (인과추론)")
+            st.markdown("""
+            <div class="metric-card">
+                <h4>🚀 순수 AI 효과: +1.8배</h4>
+                <p>신제품 출시 효과(Hype)를 제거하고 검증한 수치입니다.<br>
+                AI 타겟팅 그룹이 랜덤 그룹보다 <b>80% 높은 전환율</b>을 보였습니다.</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(y=[2, 2.2, 2.5, 2.8, 3], name='Control', line=dict(color='gray', dash='dot')))
+            fig.add_trace(go.Scatter(y=[2, 2.3, 4.5, 6, 7.5], name='Treatment', line=dict(color='#4285F4', width=3)))
+            fig.add_trace(go.Scatter(y=[2, 2.3, 4.5, 6, 7.5], fill='tonexty', name='Lift', fillcolor='rgba(66,133,244,0.1)', mode='none'))
+            fig.update_layout(title="인과 효과 분석 (Lift Chart)", height=400)
+            st.plotly_chart(fig, use_container_width=True)
+
+            if st.button("🔙 메인 대시보드로 돌아가기"):
+                st.session_state.analysis_mode = None
+                st.rerun()
+
+# -----------------------------------------------------------------------------
+# 4. 사용자 입력 처리 (Logic Routing)
+# -----------------------------------------------------------------------------
+if prompt := st.chat_input("질문을 입력하세요..."):
+    
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    next_mode = None
+    processing_msg = ""
+    response_text = ""
+
+    # [Logic 1] 특이사항/원인 질문
+    if any(word in prompt for word in ["특이", "감지", "알림", "성과", "높아", "이유", "원인"]) and not any(word in prompt for word in ["검증", "기여", "MTA", "인과"]):
+        response_text = "네, 맞습니다! **Day 4 기준 성과가 급등**했는데, 이는 Day 2부터 적용된 AI 모델 덕분으로 보입니다. \n\n정확한 **검증(Causal)**이나 **매체별 기여도(MTA)**를 확인해 보시겠습니까?"
+        next_mode = None 
+
+    # [Logic 2] 인과추론 요청
+    elif any(word in prompt for word in ["검증", "인과", "Causal", "진짜", "효과"]):
+        next_mode = 'causal'
+        processing_msg = "인과추론(Causal Inference) 수행 중..."
+        response_text = "외부 요인을 제거하고 정확한 AI 효과를 검증했습니다. 오른쪽 결과를 확인해주세요. 👉"
+
+    # [Logic 3] MTA 요청
+    elif any(word in prompt for word in ["기여", "MTA", "매체", "채널", "효자", "어떤", "누구"]):
+        next_mode = 'mta'
+        processing_msg = "고객 여정(Customer Journey) 매핑 중..."
+        response_text = "단순 클릭이 아닌, 전체 여정을 분석해 숨겨진 효자 채널을 찾았습니다! 👉"
+    
+    # [Logic 4] 메인 복귀
+    elif any(word in prompt for word in ["메인", "처음", "홈"]):
+        next_mode = None
+        st.session_state.analysis_mode = None 
+        response_text = "메인 대시보드로 돌아왔습니다."
+        
+    else:
+        response_text = "죄송합니다. **'성과 검증'** 또는 **'기여도 분석'**에 대해 물어봐주세요."
+
+    # 로딩 트리거
+    if next_mode is not None:
+        st.session_state.is_processing = True
+        st.session_state.next_mode = next_mode
+        st.session_state.processing_text = processing_msg
+
+    st.session_state.messages.append({"role": "assistant", "content": response_text})
+    st.rerun()
